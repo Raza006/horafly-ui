@@ -164,7 +164,7 @@ const LeadScraping: React.FC = () => {
   };
 
   const handleDeleteJob = async (jobId: string) => {
-    if (!confirm('Are you sure you want to delete this job and all its leads?')) return;
+    if (!window.confirm('Are you sure you want to delete this job and all its leads?')) return;
     
     try {
       await scrapingService.deleteJob(jobId);
@@ -211,7 +211,7 @@ const LeadScraping: React.FC = () => {
   };
 
   const deleteLead = async (leadId: string) => {
-    if (!confirm('Are you sure you want to delete this lead?')) return;
+    if (!window.confirm('Are you sure you want to delete this lead?')) return;
     
     try {
       await scrapingService.deleteLead(leadId);
