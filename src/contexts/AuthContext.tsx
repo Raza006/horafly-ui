@@ -57,11 +57,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const isLoggingOutRef = useRef(false);
 
   useEffect(() => {
-    // Set a timeout to prevent infinite loading
+    // Set a shorter timeout to prevent infinite loading
     const loadingTimeout = setTimeout(() => {
       console.log('⚠️ Loading timeout reached, stopping loader');
       setIsLoading(false);
-    }, 5000); // 5 second timeout
+    }, 2000); // Reduced to 2 seconds
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -129,49 +129,58 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       console.log('Loading profile for user:', user.id);
       
-      // Set a timeout for profile loading
+      // Set a shorter timeout for profile loading
       const profileTimeout = setTimeout(() => {
         console.log('⚠️ Profile loading timeout, using basic user data');
         setCurrentUser(createBasicUserProfile(user));
         setIsLoading(false);
-      }, 3000);
+      }, 1500); // Reduced to 1.5 seconds
       
-      // First sync user data to ensure localStorage is up to date
-      await userService.syncUserData(user.id);
-      
-      // Get user profile from database
-      const { data: profile, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
+      // Always create basic profile first for immediate access
+      const basicProfile = createBasicUserProfile(user);
+      setCurrentUser(basicProfile);
+      setIsLoading(false); // Stop loading immediately
       clearTimeout(profileTimeout);
+      
+      // Then try to load/create full profile in background
+      try {
+        // First sync user data to ensure localStorage is up to date
+        await userService.syncUserData(user.id);
+        
+        // Get user profile from database
+        const { data: profile, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single();
 
-      if (error && error.code === 'PGRST116') {
-        // User profile doesn't exist, create it
-        console.log('Creating new user profile...');
-        try {
-          const newProfile = await createUserProfile(user);
-          const userProfile = transformUserProfile(newProfile);
+        if (error && error.code === 'PGRST116') {
+          // User profile doesn't exist, create it
+          console.log('Creating new user profile in background...');
+          try {
+            const newProfile = await createUserProfile(user);
+            const userProfile = transformUserProfile(newProfile);
+            setCurrentUser(userProfile);
+            console.log('New profile created successfully');
+          } catch (createError) {
+            console.error('Failed to create profile, keeping basic data:', createError);
+            // Keep the basic profile we already set
+          }
+        } else if (error) {
+          console.error('Database error, keeping basic user data:', error);
+          // Keep the basic profile we already set
+        } else {
+          console.log('Profile loaded successfully, updating user data');
+          const userProfile = transformUserProfile(profile);
           setCurrentUser(userProfile);
-          console.log('New profile created successfully');
-        } catch (createError) {
-          console.error('Failed to create profile, using basic data:', createError);
-          setCurrentUser(createBasicUserProfile(user));
         }
-      } else if (error) {
-        console.error('Database error, using basic user data:', error);
-        setCurrentUser(createBasicUserProfile(user));
-      } else {
-        console.log('Profile loaded successfully');
-        const userProfile = transformUserProfile(profile);
-        setCurrentUser(userProfile);
+      } catch (backgroundError) {
+        console.error('Background profile loading failed, keeping basic data:', backgroundError);
+        // Keep the basic profile we already set
       }
     } catch (error: any) {
       console.error('Error loading user profile, using basic data:', error);
       setCurrentUser(createBasicUserProfile(user));
-    } finally {
       setIsLoading(false);
     }
   };

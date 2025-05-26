@@ -370,8 +370,8 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                 </button>
               </div>
 
-              {/* Please check your email notification for signup mode when validation is needed */}
-              {loginMode === 'signup' && (
+              {/* Only show email verification message after signup attempt */}
+              {showEmailVerification && verificationEmail && (
                 <div className="p-4 rounded-xl border"
                   style={{
                     background: `${colors.goldPrimary}10`,
@@ -380,7 +380,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                   }}
                 >
                   <p className="text-sm">
-                    <span className="font-medium">Please check your email</span> and click the confirmation link before signing in.
+                    <span className="font-medium">Please check your email</span> ({verificationEmail}) and click the confirmation link to complete your registration.
                   </p>
                 </div>
               )}

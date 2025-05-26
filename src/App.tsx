@@ -15,10 +15,10 @@ function AppContent() {
   const { currentUser, isLoading: authLoading, logout } = useAuth();
 
   useEffect(() => {
-    // Simulate loading time for the application
+    // Reduced loading time for better user experience
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 3000); // 3 seconds loading time
+    }, 1000); // Reduced to 1 second loading time
 
     return () => clearTimeout(timer);
   }, []);
